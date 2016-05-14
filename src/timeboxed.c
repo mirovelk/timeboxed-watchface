@@ -444,6 +444,23 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Requesting health from time. %d%03d", (int)time(NULL), (int)time_ms(NULL, NULL));
         get_health_data();
     }
+
+    static int vibe_hour_old = -1;
+    if (units_changed & HOUR_UNIT){
+        if (vibe_hour_old < 0) vibe_hour_old = tick_time->tm_hour;
+        if (vibe_hour_old != tick_time->tm_hour) {
+        // Vibe pattern: ON for 200ms, OFF for 100ms, ON for 400ms:
+        static const uint32_t segments[] = { 150, 70, 150 };
+        VibePattern pat = {
+            .durations = segments,
+            .num_segments = ARRAY_LENGTH(segments),
+        };
+        vibes_enqueue_custom_pattern(pat);
+
+        vibe_hour_old = tick_time->tm_hour;
+        }
+    }
+
 }
 
 static void init(void) {
